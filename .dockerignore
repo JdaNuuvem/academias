@@ -1,0 +1,23 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Logs e temporários
+*.log
+*.tmp
+*.bak
+
+# Editores
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dev tools (não vão para a imagem Docker)
+.playwright-mcp
+node_modules

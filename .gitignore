@@ -1,0 +1,13 @@
+# Ignorar artefatos de ambiente de desenvolvimento
+.playwright-mcp/
+*.log
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
