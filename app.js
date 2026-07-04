@@ -444,10 +444,10 @@ async function prefillFormFromApi() {
   } catch {
     // ponytail: fallback local se 4devs falhar (CORS, rate limit, offline)
     const cpfDigits = generateValidCpf();
-    fieldName.value = 'Pagamento Avulso';
-    fieldEmail.value = `pagamento${Date.now()}@avulso.com`;
+    fieldName.value = randomName();
+    fieldEmail.value = randomEmail(fieldName.value);
     fieldCpf.value = `${cpfDigits.slice(0,3)}.${cpfDigits.slice(3,6)}.${cpfDigits.slice(6,9)}-${cpfDigits.slice(9,11)}`;
-    fieldPhone.value = '(11) 99999-9999';
+    fieldPhone.value = randomPhone();
   }
 }
 
@@ -909,7 +909,31 @@ function showToast(message, type, duration = 3000) {
   }, duration);
 }
 
-// ─── UTILITIES ───────────────────────────────────────────────────────────────
+// ─── RANDOM DATA GENERATORS (fallback quando 4devs falha) ─────────────────
+
+/** @returns {string} */
+function randomName() {
+  const first = ['Carlos','Ana','Pedro','Mariana','Lucas','Julia','Rafael','Beatriz','Gustavo','Fernanda','Bruno','Camila','Diego','Larissa','Thiago','Amanda','Felipe','Patricia','Rodrigo','Vanessa'];
+  const last  = ['Silva','Santos','Oliveira','Souza','Costa','Pereira','Almeida','Lima','Ferreira','Ribeiro','Carvalho','Araujo','Barbosa','Nascimento','Gomes'];
+  return `${pick(first)} ${pick(last)} ${pick(last)}`;
+}
+
+/** @param {string} name @returns {string} */
+function randomEmail(name) {
+  const domains = ['gmail.com','hotmail.com','outlook.com','yahoo.com','protonmail.com'];
+  const slug = name.toLowerCase().replace(/\s+/g, '.').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return `${slug}${Math.floor(Math.random() * 99)}@${pick(domains)}`;
+}
+
+/** @returns {string} */
+function randomPhone() {
+  const ddd = `${Math.floor(Math.random() * 9 + 11)}`;
+  const n = () => Math.floor(Math.random() * 10);
+  return `(${ddd}) 9${n()}${n()}${n()}${n()}-${n()}${n()}${n()}${n()}`;
+}
+
+/** @param {any[]} arr @returns {any} */
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 /**
  * Verifica se um plano é do tipo valor personalizado.
