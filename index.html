@@ -38,8 +38,31 @@
   <section class="hero">
     <h1 class="hero__title">Planos <span class="gradient-text">disponíveis</span></h1>
     <p class="hero__description">
-      Selecione o plano ideal para você. O QR Code e o código PIX são gerados instantaneamente.
+      Selecione um plano ou digite um valor personalizado. O QR Code e o código PIX são gerados instantaneamente.
     </p>
+  </section>
+
+  <!-- ─── VALOR PERSONALIZADO ─── -->
+  <section class="custom-section">
+    <div class="custom-card">
+      <div class="custom-card__header">
+        <h3 class="custom-card__title">Valor personalizado</h3>
+        <p class="custom-card__subtitle">Digite qualquer valor para gerar um PIX</p>
+      </div>
+      <div class="custom-card__input-row">
+        <span class="custom-card__currency">R$</span>
+        <input
+          type="text"
+          id="custom-value-input"
+          class="custom-card__input"
+          placeholder="0,00"
+          inputmode="decimal"
+          maxlength="12"
+        />
+        <button class="custom-card__btn" id="btn-custom-pix">Gerar PIX</button>
+      </div>
+      <p class="custom-card__error" id="custom-value-error" aria-live="polite"></p>
+    </div>
   </section>
 
   <!-- ─── PLANOS GRID ─── -->

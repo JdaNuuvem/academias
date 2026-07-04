@@ -76,6 +76,11 @@ const viewError       = /** @type {HTMLElement} */ (document.getElementById('vie
 const apiErrorMsg     = /** @type {HTMLElement} */ (document.getElementById('api-error-msg'));
 const btnRetry        = /** @type {HTMLButtonElement} */ (document.getElementById('btn-retry'));
 
+// Custom value
+const customInput     = /** @type {HTMLInputElement} */ (document.getElementById('custom-value-input'));
+const btnCustomPix    = /** @type {HTMLButtonElement} */ (document.getElementById('btn-custom-pix'));
+const customValError  = /** @type {HTMLElement} */ (document.getElementById('custom-value-error'));
+
 // Toast
 const toastEl         = /** @type {HTMLElement} */ (document.getElementById('toast'));
 
@@ -265,7 +270,9 @@ function openModal(plan) {
   activePlan = plan;
   showView('form');
 
-  modalPlanLabel.textContent = `Plano ${plan.name} — R$ ${plan.priceLabel}/mês`;
+  modalPlanLabel.textContent = isCustomPlan(plan)
+    ? `Pagamento — R$ ${plan.priceLabel}`
+    : `Plano ${plan.name} — R$ ${plan.priceLabel}/mês`;
   pixForm.reset();
   clearFieldErrors();
   formError.textContent = '';
@@ -363,6 +370,64 @@ function handlePhoneMask(evt) {
 
 fieldCpf.addEventListener('input', handleCpfMask);
 fieldPhone.addEventListener('input', handlePhoneMask);
+
+// ─── CUSTOM VALUE ─────────────────────────────────────────────────────────────
+
+/**
+ * Máscara de valor monetário: digita 1250 → "12,50"
+ * @param {Event} evt
+ */
+function handleCurrencyMask(evt) {
+  const input = /** @type {HTMLInputElement} */ (evt.target);
+  let v = input.value.replace(/\D/g, '');
+  if (v === '') { input.value = ''; return; }
+  // pad com zeros à esquerda para ter pelo menos 3 dígitos (centavos)
+  v = v.padStart(3, '0');
+  const intPart = v.slice(0, -2).replace(/^0+/, '') || '0';
+  const decPart = v.slice(-2);
+  input.value = `${intPart},${decPart}`;
+}
+
+customInput.addEventListener('input', handleCurrencyMask);
+
+/** Converte "12,50" → 1250 (centavos), retorna null se inválido */
+function parseCurrencyValue(raw) {
+  const cleaned = raw.replace(/\D/g, '');
+  if (!cleaned) return null;
+  const cents = parseInt(cleaned, 10);
+  if (isNaN(cents) || cents < 1) return null;
+  return cents;
+}
+
+function openCustomPix() {
+  customValError.textContent = '';
+  customInput.classList.remove('is-invalid');
+
+  const raw = customInput.value.trim();
+  const cents = parseCurrencyValue(raw);
+
+  if (!cents || cents < 10) {
+    customValError.textContent = 'Digite um valor válido (mínimo R$ 0,10).';
+    customInput.classList.add('is-invalid');
+    return;
+  }
+
+  const priceLabel = (cents / 100).toFixed(2).replace('.', ',');
+  const plan = {
+    id:           `CUSTOM-${Date.now()}`,
+    name:         `R$ ${priceLabel}`,
+    priceInCents: cents,
+    priceLabel:   priceLabel,
+    isPopular:    false,
+  };
+
+  openModal(plan);
+}
+
+btnCustomPix.addEventListener('click', openCustomPix);
+customInput.addEventListener('keydown', (evt) => {
+  if (evt.key === 'Enter') { evt.preventDefault(); openCustomPix(); }
+});
 
 // ─── VALIDATION ───────────────────────────────────────────────────────────────
 
@@ -533,7 +598,7 @@ async function createPixTransaction(customerData, plan, apiKey) {
     },
     items: [
       {
-        title:       `Mensalidade ${plan.name}`,
+        title:       isCustomPlan(plan) ? `Pagamento — R$ ${plan.priceLabel}` : `Mensalidade ${plan.name}`,
         unitPrice:   plan.priceInCents,
         quantity:    1,
         tangible:    false,
@@ -597,7 +662,9 @@ async function createPixTransaction(customerData, plan, apiKey) {
  * @returns {void}
  */
 function renderPixResult(pixString, plan) {
-  pixPlanLabel.textContent = `Plano ${plan.name} — R$ ${plan.priceLabel}/mês`;
+  pixPlanLabel.textContent = isCustomPlan(plan)
+    ? `Pagamento — R$ ${plan.priceLabel}`
+    : `Plano ${plan.name} — R$ ${plan.priceLabel}/mês`;
   pixCodeField.value       = pixString;
 
   const expirationDate = new Date();
@@ -772,6 +839,15 @@ function showToast(message, type, duration = 3000) {
 }
 
 // ─── UTILITIES ───────────────────────────────────────────────────────────────
+
+/**
+ * Verifica se um plano é do tipo valor personalizado.
+ * @param {Plan} plan
+ * @returns {boolean}
+ */
+function isCustomPlan(plan) {
+  return plan.id.startsWith('CUSTOM-');
+}
 
 /**
  * Escapa caracteres HTML para prevenir XSS na renderização dinâmica.
