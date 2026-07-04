@@ -399,7 +399,56 @@ function parseCurrencyValue(raw) {
   return cents;
 }
 
-function openCustomPix() {
+/**
+ * Busca dados de uma pessoa via API 4devs.
+ * @returns {Promise<{name: string, email: string, cpf: string, phone: string}>}
+ */
+async function fetchFakePerson() {
+  const body = new URLSearchParams({
+    acao: 'gerar_pessoa',
+    sexo: Math.random() > 0.5 ? 'H' : 'M',
+    pontuacao: 'S',
+    txt_qtde: '1',
+  });
+
+  const response = await fetch('https://www.4devs.com.br/ferramentas_online.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  });
+
+  if (!response.ok) throw new Error(`4devs API returned ${response.status}`);
+
+  const data = await response.json();
+  const person = data[0];
+
+  return {
+    name: person.nome,
+    email: person.email,
+    cpf: person.cpf,
+    phone: person.celular,
+  };
+}
+
+/** Preenche o formulário com dados gerados (4devs como preferência, fallback local). */
+async function prefillFormFromApi() {
+  try {
+    const person = await fetchFakePerson();
+    fieldName.value = person.name;
+    fieldEmail.value = person.email;
+    fieldCpf.value = person.cpf;
+    fieldPhone.value = person.phone;
+  } catch {
+    // ponytail: fallback local se 4devs falhar (CORS, rate limit, offline)
+    const cpfDigits = generateValidCpf();
+    fieldName.value = 'Pagamento Avulso';
+    fieldEmail.value = `pagamento${Date.now()}@avulso.com`;
+    fieldCpf.value = `${cpfDigits.slice(0,3)}.${cpfDigits.slice(3,6)}.${cpfDigits.slice(6,9)}-${cpfDigits.slice(9,11)}`;
+    fieldPhone.value = '(11) 99999-9999';
+  }
+}
+
+async function openCustomPix() {
   customValError.textContent = '';
   customInput.classList.remove('is-invalid');
 
@@ -422,6 +471,7 @@ function openCustomPix() {
   };
 
   openModal(plan);
+  await prefillFormFromApi();
 }
 
 btnCustomPix.addEventListener('click', openCustomPix);
@@ -460,6 +510,25 @@ function isValidCpf(cpf) {
   const remainder2 = calcDigit(digits.slice(0, 10), 11) % 11;
   const digit2     = remainder2 < 2 ? 0 : 11 - remainder2;
   return digit2 === Number(digits[10]);
+}
+
+/**
+ * Gera um CPF válido com dígitos verificadores corretos.
+ * @returns {string} CPF com 11 dígitos, formato puro (sem máscara)
+ */
+function generateValidCpf() {
+  const digits = [];
+  for (let i = 0; i < 9; i++) {
+    digits[i] = Math.floor(Math.random() * 10);
+  }
+  const calcDv = (slice, weight) => {
+    const sum = slice.reduce((s, d, i) => s + d * (weight - i), 0);
+    const remainder = sum % 11;
+    return remainder < 2 ? 0 : 11 - remainder;
+  };
+  digits[9] = calcDv(digits, 10);
+  digits[10] = calcDv(digits, 11);
+  return digits.join('');
 }
 
 /**
