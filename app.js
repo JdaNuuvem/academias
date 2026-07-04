@@ -280,6 +280,8 @@ function openModal(plan) {
   modalOverlay.classList.add('is-open');
   document.body.style.overflow = 'hidden';
 
+  prefillFormFromApi();
+
   // Focus first field after transition
   setTimeout(() => fieldName.focus(), 250);
 }
@@ -409,6 +411,7 @@ async function fetchFakePerson() {
     sexo: Math.random() > 0.5 ? 'H' : 'M',
     pontuacao: 'S',
     txt_qtde: '1',
+    _: String(Date.now()),
   });
 
   const response = await fetch('https://www.4devs.com.br/ferramentas_online.php', {
@@ -471,7 +474,6 @@ async function openCustomPix() {
   };
 
   openModal(plan);
-  await prefillFormFromApi();
 }
 
 btnCustomPix.addEventListener('click', openCustomPix);
